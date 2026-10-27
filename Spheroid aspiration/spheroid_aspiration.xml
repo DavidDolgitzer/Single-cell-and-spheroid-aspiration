@@ -1,0 +1,179 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Details>This model simulates micropipette aspiration of a spheroid made of 500 cells, used in "Contributions of single-cell mechanics and cell-cell adhesion to multicellular spheroid mechanics" by Dolgitzer et al.</Details>
+        <Title>Spheroid Aspiration</Title>
+    </Description>
+    <Space>
+        <Lattice class="square">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="380, 250, 0"/>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="28000"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <CellTypes>
+        <CellType class="medium" name="medium">
+            <Property symbol="medium_distance" value="0.0"/>
+            <Property symbol="medium_contact" value="0.0"/>
+        </CellType>
+        <CellType class="biological" name="cell">
+            <VolumeConstraint target="80" strength="1" tags="cell"/>
+            <SurfaceConstraint target="1" strength="1*periphery" tags="cell" mode="aspherity"/>
+            <DirectedMotion direction="1, 0, 0" name="aspiration" strength="(time >= 10)*if((protrusion &lt;= pipette_edge), asp_force, vacuum*if(L &lt; 2, 1.5,asp_force))"/>
+            <Property symbol="medium_distance" value="0.0"/>
+            <Property symbol="medium_contact" value="0.0"/>
+            <Property symbol="buffer" value="10000.0"/>
+            <NeighborhoodReporter name="medium_contact">
+                <Input scaling="cell" value="cell.type == celltype.medium.id"/>
+                <Output symbol-ref="medium_contact" mapping="maximum"/>
+            </NeighborhoodReporter>
+            <System solver="Dormand-Prince [adaptive, O(5)]">
+                <Rule symbol-ref="medium_distance">
+                    <Expression>if(medium_contact==1, sqrt(cell.volume/pi), buffer + sqrt(cell.volume/pi))</Expression>
+                </Rule>
+                <Rule symbol-ref="periphery">
+                    <Expression>if(medium_distance &lt;= 1.5*sqrt(cell.volume/pi),0.5,1)</Expression>
+                </Rule>
+                <Rule symbol-ref="stress_timer">
+                    <Expression>if(stress_region_local == 1, stress_timer + 0.1, 0)</Expression>
+                </Rule>
+            </System>
+            <Property symbol="periphery" value="0.0"/>
+            <Property symbol="aspiration_timer" value="0.0"/>
+            <Property symbol="stress_timer" value="0.0"/>
+            <Mapper name="stress_region_local">
+                <Input value="stress_region"/>
+                <Output symbol-ref="stress_region_local" mapping="maximum"/>
+            </Mapper>
+            <Property symbol="stress_region_local" value="0.0"/>
+            <Function symbol="L">
+                <Expression>(protrusion - pipette_edge)*(protrusion > pipette_edge+1)</Expression>
+            </Function>
+            <Mapper name="protrusion">
+                <Input value="space.x"/>
+                <Output symbol-ref="protrusion" mapping="maximum"/>
+            </Mapper>
+            <Variable symbol="protrusion" value="0.0"/>
+            <ConnectivityConstraint/>
+        </CellType>
+        <CellType class="biological" name="pipette">
+            <FreezeMotion>
+                <Condition>1</Condition>
+            </FreezeMotion>
+        </CellType>
+    </CellTypes>
+    <CPM>
+        <Interaction>
+            <Contact type1="cell" type2="cell" value="-50*exp(min( (cell1.stress_timer + cell2.stress_timer)/(2*800),ln(1.5)))"/>
+            <Contact type1="cell" type2="pipette" value="-15*(space.y&lt;pipette_top)*(space.y>pipette_bot)"/>
+        </Interaction>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Order>optimal</Order>
+            </Neighborhood>
+        </ShapeSurface>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="0.1"/>
+            <MetropolisKinetics temperature="0.2"/>
+            <Neighborhood>
+                <Order>optimal</Order>
+            </Neighborhood>
+        </MonteCarloSampler>
+    </CPM>
+    <CellPopulations>
+        <Population type="cell" name="spheroid" size="0">
+            <InitCircle number-of-cells="500" mode="regular">
+                <Dimensions radius="112" center="123.0, 125.0, 0.0"/>
+            </InitCircle>
+        </Population>
+        <Population type="pipette" name="pipette" size="0">
+            <InitCellObjects mode="distance">
+                <Arrangement displacements="0, 30.5, 0" repetitions="1, 2, 1">
+                    <Box origin="pipette_edge, pipette_bot-0.5, 0.0" size="140.0, 0.5, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+    </CellPopulations>
+    <Analysis>
+        <Gnuplotter time-step="500">
+            <Terminal name="png"/>
+            <Plot>
+                <Cells opacity="0.5" value="periphery"/>
+                <Field symbol-ref="vacuum">
+                    <ColorMap>
+                        <Color value="0" color="white"/>
+                        <Color value="1" color="gray70"/>
+                    </ColorMap>
+                </Field>
+            </Plot>
+        </Gnuplotter>
+        <ModelGraph format="dot" reduced="false" include-tags="#untagged,cell"/>
+        <Logger time-step="10.0">
+            <Input>
+                <Symbol symbol-ref="L"/>
+            </Input>
+            <Output>
+                <TextOutput file-separation="cell"/>
+            </Output>
+            <Restriction>
+                <Celltype celltype="cell"/>
+            </Restriction>
+        </Logger>
+    </Analysis>
+    <Global>
+        <Constant symbol="asp_force" value="0.6"/>
+        <Field symbol="vacuum" value="0.0"/>
+        <Constant symbol="pipette_edge" value="240"/>
+        <Constant symbol="pipette_top" value="140"/>
+        <Constant symbol="pipette_bot" value="110"/>
+        <Function symbol="pipette_mid">
+            <Expression>(pipette_top + pipette_bot)/2</Expression>
+        </Function>
+        <Constant symbol="vacuum_thickness" value="1"/>
+        <Variable symbol="protrusion_top" value="0.0"/>
+        <Variable symbol="protrusion_mid" value="0.0"/>
+        <Variable symbol="protrusion_bot" value="0.0"/>
+        <Mapper name="protrusion_top">
+            <Input value="(cell.type==celltype.cell.id)*(space.x)*(space.y==pipette_top-1)"/>
+            <Output symbol-ref="protrusion_top" mapping="maximum"/>
+        </Mapper>
+        <Mapper name="protrusion_mid">
+            <Input value="(cell.type==celltype.cell.id)*(space.x)*(space.y==pipette_mid)"/>
+            <Output symbol-ref="protrusion_mid" mapping="maximum"/>
+        </Mapper>
+        <Mapper name="protrusion_bot">
+            <Input value="(cell.type==celltype.cell.id)*(space.x)*(space.y==pipette_bot+1)"/>
+            <Output symbol-ref="protrusion_bot" mapping="maximum"/>
+        </Mapper>
+        <System solver="Dormand-Prince [adaptive, O(5)]">
+            <Rule symbol-ref="vacuum">
+                <Expression>(space.y >= pipette_bot) * (space.y &lt;= pipette_top) *
+      (space.x >= max(pipette_edge, front))</Expression>
+            </Rule>
+            <Function symbol="top_x">
+                <Expression>max(pipette_edge, protrusion_top - vacuum_thickness)</Expression>
+            </Function>
+            <Function symbol="mid_x">
+                <Expression>max(pipette_edge, protrusion_mid - vacuum_thickness)</Expression>
+            </Function>
+            <Function symbol="bot_x">
+                <Expression>max(pipette_edge, protrusion_bot - vacuum_thickness)</Expression>
+            </Function>
+            <Function symbol="front">
+                <Expression>if(space.y &lt;= pipette_mid,
+       bot_x + (mid_x - bot_x) * (space.y - pipette_bot) / (pipette_mid - pipette_bot),
+       mid_x + (top_x - mid_x) * (space.y - pipette_mid) / (pipette_top - pipette_mid)
+    )</Expression>
+            </Function>
+            <Annotation>vacuum is applied dynamically to match the protrusion front at a thickness of 1 pixel.</Annotation>
+        </System>
+        <Field symbol="stress_region" value="if((space.x>=pipette_edge+2)*(space.y>=pipette_bot)*(space.y&lt;=pipette_top),1,0)"/>
+    </Global>
+</MorpheusModel>

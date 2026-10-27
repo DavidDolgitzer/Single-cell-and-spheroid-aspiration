@@ -22,3 +22,5 @@ slprj/
 sccprj/
 codegen/
 *.slxc
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/

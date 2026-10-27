@@ -1,0 +1,155 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Details>This model simulates micropipette aspiration of single cells, used in "Contributions of single-cell mechanics and cell-cell adhesion to multicellular spheroid mechanics" by Dolgitzer et al.  
+It runs 10 aspirations simultaneously, and stores them into separate logs for the user to analyze independently. The cells have a target area of 800, and are scaled to behave like cells with target area of 80 under the same MPA condition.
+</Details>
+        <Title>Single-cell aspiration</Title>
+    </Description>
+    <Space>
+        <Lattice class="square">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="161, 260, 0"/>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="5000"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <CellTypes>
+        <CellType class="biological" name="cell">
+            <VolumeConstraint target="800" strength="1*pow(scaling,2)" tags="cell"/>
+            <SurfaceConstraint target="1" strength="1*scaling" tags="cell" mode="aspherity"/>
+            <Property symbol="protrusion" value="0.0"/>
+            <Mapper name="protrusion">
+                <Input value="space.x"/>
+                <Output symbol-ref="protrusion" mapping="maximum"/>
+            </Mapper>
+            <Function symbol="L">
+                <Expression>if(protrusion &lt; boundary, (protrusion - pipette_enter1)*(protrusion > pipette_enter1),  (protrusion - pipette_enter2)*(protrusion > pipette_enter2))</Expression>
+            </Function>
+            <DirectedMotion direction="1.0, 0.0, 0.0" name="aspiration" strength="if((protrusion&lt;=boundary), if((protrusion &lt; pipette_enter1)*(time > 10), asp_force*pow(scaling,2), vacuum * asp_force*pow(scaling,2)), if((protrusion &lt; pipette_enter2)*(time > 10), asp_force*pow(scaling,2), vacuum * asp_force*pow(scaling,2)) )"/>
+            <Property symbol="scaling" value="r_ref/r"/>
+            <Property symbol="r" value="sqrt(cell.volume/pi)"/>
+        </CellType>
+        <CellType class="biological" name="pipette">
+            <FreezeMotion>
+                <Condition>1</Condition>
+            </FreezeMotion>
+        </CellType>
+        <CellType class="biological" name="boundary">
+            <FreezeMotion>
+                <Condition>1.0</Condition>
+            </FreezeMotion>
+        </CellType>
+    </CellTypes>
+    <CPM>
+        <Interaction/>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Order>optimal</Order>
+            </Neighborhood>
+        </ShapeSurface>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="0.1*t_MCS_scaling"/>
+            <MetropolisKinetics temperature="0.2"/>
+            <Neighborhood>
+                <Order>optimal</Order>
+            </Neighborhood>
+        </MonteCarloSampler>
+    </CPM>
+    <CellPopulations>
+        <Population type="cell" name="cell" size="1">
+            <InitCellObjects tags="cell" mode="distance">
+                <Arrangement displacements="pipette_displacement_x, cell_displacement_x, 0" repetitions="2, 5, 1">
+                    <Sphere radius="16" center="30,30,0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+        <Population type="pipette" name="pipette" size="0">
+            <InitCellObjects mode="distance">
+                <Arrangement displacements="pipette_displacement_x, pipette_width, 0" repetitions="2, 2, 1">
+                    <Box origin="pipette_enter1, pipette_wall_bot, 0.0" size="pipette_length, wall_thickness, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+            <InitCellObjects mode="distance">
+                <Arrangement displacements="pipette_displacement_x, pipette_width, 0" repetitions="2, 2, 1">
+                    <Box origin="pipette_enter1, pipette_wall_bot + cell_displacement_x, 0.0" size="pipette_length, wall_thickness, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+            <InitCellObjects mode="distance">
+                <Arrangement displacements="pipette_displacement_x, pipette_width, 0" repetitions="2, 2, 1">
+                    <Box origin="pipette_enter1, pipette_wall_bot + 2*cell_displacement_x, 0.0" size="pipette_length, wall_thickness, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+            <InitCellObjects mode="distance">
+                <Arrangement displacements="pipette_displacement_x, pipette_width, 0" repetitions="2, 2, 1">
+                    <Box origin="pipette_enter1, pipette_wall_bot + 3*cell_displacement_x, 0.0" size="pipette_length, wall_thickness, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+            <InitCellObjects mode="distance">
+                <Arrangement displacements="pipette_displacement_x, pipette_width, 0" repetitions="2, 2, 1">
+                    <Box origin="pipette_enter1, pipette_wall_bot + 4*cell_displacement_x, 0.0" size="pipette_length, wall_thickness, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+        <Population type="boundary" name="boundary" size="0">
+            <InitCellObjects mode="distance">
+                <Arrangement displacements="1, 1, 1" repetitions="1, 1, 1">
+                    <Box origin="boundary, 0.0, 0.0" size="1, 260, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+    </CellPopulations>
+    <Analysis>
+        <Gnuplotter time-step="100">
+            <Terminal name="png"/>
+            <Plot>
+                <Cells value="cell.type"/>
+                <Field symbol-ref="vacuum">
+                    <ColorMap>
+                        <Color value="0" color="white"/>
+                        <Color value="1" color="light-coral"/>
+                    </ColorMap>
+                </Field>
+            </Plot>
+        </Gnuplotter>
+        <ModelGraph format="dot" reduced="false" include-tags="#untagged,cell"/>
+        <Logger time-step="1.0">
+            <Input>
+                <Symbol symbol-ref="L"/>
+            </Input>
+            <Output>
+                <TextOutput file-separation="cell"/>
+            </Output>
+            <Restriction>
+                <Celltype celltype="cell"/>
+            </Restriction>
+        </Logger>
+    </Analysis>
+    <Global>
+        <Constant symbol="asp_force" value="0.05"/>
+        <Constant symbol="pipette_enter1" value="50"/>
+        <Constant symbol="pipette_enter2" value="131"/>
+        <Constant symbol="boundary" value="80"/>
+        <Constant symbol="pipette_displacement_x" value="81"/>
+        <Constant symbol="pipette_width" value="17"/>
+        <Constant symbol="cell_displacement_x" value="50"/>
+        <Constant symbol="pipette_wall_bot" value="21"/>
+        <Field symbol="p1" value="(space.y >= pipette_wall_bot + wall_thickness)*(space.y &lt;= (pipette_wall_bot + pipette_width))"/>
+        <Field symbol="p2" value="(space.y >= pipette_wall_bot + wall_thickness + cell_displacement_x)*(space.y &lt;= (pipette_wall_bot + pipette_width + cell_displacement_x))"/>
+        <Field symbol="p3" value="(space.y >= pipette_wall_bot + wall_thickness + 2*cell_displacement_x)*(space.y &lt;= (pipette_wall_bot + pipette_width + 2*cell_displacement_x))"/>
+        <Field symbol="p4" value="(space.y >= pipette_wall_bot + wall_thickness + 3*cell_displacement_x)*(space.y &lt;= (pipette_wall_bot + pipette_width + 3*cell_displacement_x))"/>
+        <Field symbol="p5" value="(space.y >= pipette_wall_bot + wall_thickness + 4*cell_displacement_x)*(space.y &lt;= (pipette_wall_bot + pipette_width + 4*cell_displacement_x))"/>
+        <Field symbol="vacuum" value="(((space.x >= pipette_enter1)* (space.x &lt;= boundary)) + (space.x >= pipette_enter2)) * (p1 + p2 + p3 + p4 + p5)"/>
+        <Constant symbol="pipette_length" value="30"/>
+        <Constant symbol="wall_thickness" value="1"/>
+        <Constant symbol="r_ref" value="sqrt(80/pi)"/>
+        <Constant symbol="r_current" value="sqrt(800/pi)"/>
+        <Constant symbol="t_MCS_scaling" value="(r_current/r_ref)^2"/>
+    </Global>
+</MorpheusModel>
