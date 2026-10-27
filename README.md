@@ -188,7 +188,7 @@ Several parameters were manually assigned during the `spheroid simulation` analy
 
 ## License
 
-No license.
+Code is licensed under the MIT License. See LICENSE.
 
 ## Authors and contact
 
