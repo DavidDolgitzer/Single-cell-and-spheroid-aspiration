@@ -33,13 +33,13 @@ The spheroid analysis covers 25 combinations of single-cell stiffness and cell-c
 - `λₛ`: 0.8, 0.9, 1.0, 1.1, and 1.2
 - `J`: -40, -45, -50, -55, and -60
 
-Here, `λₛ` represents [FILL IN: meaning and units, if applicable], and `J` represents [FILL IN: meaning and units, if applicable].
+Here, `λₛ` represents the energetic penalty for a cell's perimeter length deviating from the perimeter length of a circle with the same area. `J` represents the cell-cell contact energy per length unit. Lower (more negative) values mean stronger adhesion.
 
 Folder names use this format:
 
     lambda_S_[stiffness]_J_[adhesion]
 
-For example, `lambda_S_1_J_50` contains simulations with `λₛ = 1` and `J = 50`.
+For example, `lambda_S_1_J_50` contains simulations with `λₛ = 1` and `J = -50`.
 
 ## Recreate figures from the processed data
 
@@ -113,7 +113,7 @@ To repeat the analysis for one stiffness condition:
 
 The `force_XX.m` scripts connect each aspiration-force directory to `process_sim_block.m`. The resulting `.mat` files are used by the Python plotting notebook.
 
-Script must be run from its own directory. Changes in analysis code will change the existing `block_XX_results.mat`, therefore changing the figure plots in python.]
+Script must be run from its own directory. Changes in analysis code will change the existing `block_XX_results.mat`, therefore changing the figure plots in python.
 
 ### Spheroid aspiration analysis
 
@@ -177,7 +177,7 @@ Parameter names in the XML files:
 - Use 4 threads and keep seed random (the latter is a default in Morpheus).
 - Results may vary when simulations are rerun with different random seeds.
 - The included `.mat` files were generated from the CSV outputs included in this repository.
-- Approximate runtime and hardware: single-cell simulations: 15 seconds; 2:30-5 hours, depending on aspiration waiting time. These times represent simulations run on a 2021 MacBook Pro with an Apple M1 processor and 16 GB RAM.
+- Approximate runtime and hardware: single-cell simulations: 15 seconds; spheroid simulations: 2:30-5 hours, depending on aspiration waiting time. These times represent simulations run on a 2021 MacBook Pro with an Apple M1 processor and 16 GB RAM.
 
 ### Manually assigned parameters
 
@@ -193,4 +193,4 @@ Morpheus is a separate software project; see its official website and license fo
 
 ## Authors and contact
 
-For more information discussion please contact David Dolgitzer at ddolgit1@jhu.edu.
+For more information and discussion please contact David Dolgitzer at ddolgit1@jhu.edu.
