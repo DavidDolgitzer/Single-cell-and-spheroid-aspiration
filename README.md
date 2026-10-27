@@ -189,6 +189,7 @@ Several parameters were manually assigned during the `spheroid simulation` analy
 ## License
 
 Code is licensed under the MIT License. See LICENSE.
+Morpheus is a separate software project; see its official website and license for its terms.
 
 ## Authors and contact
 
