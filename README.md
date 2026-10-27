@@ -184,7 +184,7 @@ Parameter names in the XML files:
 Several parameters were manually assigned during the `spheroid simulation` analysis in the MATLAB scripts
 - `clipping` (`force_#.m`): clips aspiration length and establishes t=0 from there. This was done manually to ignore initial lags in aspiration. Generally, lower aspiration force, stiffer cells, and stronger adhesion require more clipping.
 - `analysis_time_limit` (`force_#.m`): tracks the slowest simulation to reach the end of the pipette, and extrapolates all other simulation to reach that time. Generally, weaker adhesion, softer cells, and higher aspiration force requires extrapolation.
-- `baseline_force` (`process_sim_block`): The amount of aspiration required for initial aspiration, sometimes called "critical pressure". To find, plot `mean_L_end` vs. ΔF (as in Figure 4d, only with `mean_L_end` instead of `mean_L`) and fit to find the y-axis intersection. Preferably use only lower aspiration force.
+- `baseline_force` (`process_sim_block`): The amount of aspiration required for initial aspiration, sometimes called "critical pressure". To find, plot `mean_L_end` vs. ΔF (as in Figure 4d, only with `mean_L_end` instead of `mean_L`) and fit to find the y-axis intersection. Preferably use only lower aspiration forces.
 
 ## License
 
